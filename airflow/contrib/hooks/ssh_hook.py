@@ -34,7 +34,7 @@ class SSHHook(BaseHook, LoggingMixin):
 
     :param ssh_conn_id: connection id from airflow Connections from where all the required
         parameters can be fetched like username, password or key_file.
-        Thought the priority is given to the param passed during init
+        Though the priority is given to the param passed during init
     :type ssh_conn_id: str
     :param remote_host: remote host to connect
     :type remote_host: str
@@ -54,6 +54,7 @@ class SSHHook(BaseHook, LoggingMixin):
                  username=None,
                  password=None,
                  key_file=None,
+                 port=None,
                  timeout=10
                  ):
         super(SSHHook, self).__init__(ssh_conn_id)
@@ -62,6 +63,7 @@ class SSHHook(BaseHook, LoggingMixin):
         self.username = username
         self.password = password
         self.key_file = key_file
+        self.port = port
         self.timeout = timeout
         # Default values, overridable from Connection
         self.compress = True
@@ -79,6 +81,8 @@ class SSHHook(BaseHook, LoggingMixin):
                     self.password = conn.password
                 if self.remote_host is None:
                     self.remote_host = conn.host
+                if self.port is None:
+                    self.port = conn.port
                 if conn.extra is not None:
                     extra_options = conn.extra_dejson
                     self.key_file = extra_options.get("key_file")
@@ -95,6 +99,9 @@ class SSHHook(BaseHook, LoggingMixin):
 
             if not self.remote_host:
                 raise AirflowException("Missing required param: remote_host")
+
+            if not self.port:
+                self.port = 22
 
             # Auto detecting username values from system
             if not self.username:
@@ -131,6 +138,7 @@ class SSHHook(BaseHook, LoggingMixin):
                                    password=self.password,
                                    timeout=self.timeout,
                                    compress=self.compress,
+                                   port=self.port,
                                    sock=host_proxy)
                 else:
                     client.connect(hostname=self.remote_host,
@@ -138,6 +146,7 @@ class SSHHook(BaseHook, LoggingMixin):
                                    key_filename=self.key_file,
                                    timeout=self.timeout,
                                    compress=self.compress,
+                                   port=self.port,
                                    sock=host_proxy)
 
                 self.client = client
